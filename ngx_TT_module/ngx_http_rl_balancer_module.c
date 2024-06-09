@@ -128,7 +128,7 @@ ngx_http_rl_balancer_get_peer(ngx_peer_connection_t *pc, void *data)
     char buffer[10];
     zmq_recv(requester, buffer, 10, 0);
 
-    int peer_index = ngx_atoi((u_char *)buffer, ngx_strlen(buffer));
+    ngx_uint_t peer_index = ngx_atoi((u_char *)buffer, ngx_strlen(buffer));
     zmq_close(requester);
     zmq_ctx_destroy(context);
 
@@ -143,8 +143,8 @@ ngx_http_rl_balancer_get_peer(ngx_peer_connection_t *pc, void *data)
             peer->conns++;
             rlp->rrp.current = peer;
 
-            ngx_http_upstream_rr_peer_lock(peers);
-            ngx_http_upstream_rr_peer_unlock(peers);
+            ngx_http_upstream_rr_peer_lock(peers, peer);
+            ngx_http_upstream_rr_peer_unlock(peers, peer);
 
             return NGX_OK;
         }

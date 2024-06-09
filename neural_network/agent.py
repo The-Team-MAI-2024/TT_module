@@ -1,4 +1,3 @@
-import gym
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -22,7 +21,7 @@ class RLAgent:
         model.add(keras.layers.Dense(24, input_dim=self.state_size, activation='relu'))
         model.add(keras.layers.Dense(24, activation='relu'))
         model.add(keras.layers.Dense(self.action_size, activation='linear'))
-        model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=self.learning_rate))
+        model.compile(loss='mse', optimizer=keras.optimizers.Adam(learning_rate=self.learning_rate))
         return model
 
     def remember(self, state, action, reward, next_state, done):
