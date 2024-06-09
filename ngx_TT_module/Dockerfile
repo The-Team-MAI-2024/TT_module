@@ -27,10 +27,9 @@ RUN make && make install
 
 # Копируем конфигурационные файлы Nginx
 RUN mv /usr/src/nginx-1.18.0/objs/nginx /usr/sbin/nginx 
-COPY nginx.conf /etc/nginx/nginx.conf
 
 # Открываем порты
 EXPOSE 80
 
 # Запускаем Nginx
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
