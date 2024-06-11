@@ -9,6 +9,5 @@ COPY agent.py /app/agent.py
 
 # Переходим в рабочую директорию
 WORKDIR /app
-
 # Запускаем агент
 CMD ["python", "agent.py"]

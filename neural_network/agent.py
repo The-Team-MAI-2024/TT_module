@@ -1,5 +1,5 @@
 import numpy as np
-import tensorflow as tf
+import os
 from tensorflow import keras
 from collections import deque
 import zmq
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind("tcp://*:5555")
+    socket.bind(f"tcp://*:{os.environ['HOME']}")
 
     while True:
         # Получение состояния от Nginx
