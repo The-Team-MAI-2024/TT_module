@@ -28,14 +28,14 @@ services:
     networks:
       - loadBalancer
 
-  agent:
-    build:
-      context: ../../neural_network
-      dockerfile: Dockerfile
-    environment:
-      - PORT=5555
-    networks:
-      - loadBalancer
+  # agent:
+  #   build:
+  #     context: ../../neural_network
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     - PORT=5555
+  #   networks:
+  #     - loadBalancer
 
   nginx:
     build:
@@ -45,14 +45,14 @@ services:
     volumes:
       - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
     ports:
-      - 801:8080
+      - 8080:8080
     networks:
       - loadBalancer
     depends_on:
       - server1
       - server2
       - server3
-      - agent
+      # - agent
 
 networks:
   loadBalancer:
