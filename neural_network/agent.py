@@ -59,7 +59,7 @@ if __name__ == "__main__":
     
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind(f"tcp://*:{os.environ['HOME']}")
+    socket.bind(f"tcp://*:5555") # {os.getenv('PORT', "5555")}
 
     while True:
         # Получение состояния от Nginx

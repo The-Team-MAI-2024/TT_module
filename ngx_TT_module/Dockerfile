@@ -1,93 +1,50 @@
-FROM debian:bullseye-slim AS builder
+# глобальный параметр, общий для сборочного и целевого контейнера
+#TODO дистрибутив linux должен быть тем же, что и в целевом образе
+ARG ARG_NGINX_VERSION=1.27.0 
 
-ENV NGINX_VERSION=1.27.0
+# сборочный временный контейнер
+FROM alpine:latest AS build-stage
 
-# Устанавливаем зависимости для сборки Nginx
-RUN apt update && \
-    apt install -y \
-    build-essential \
-    curl \
-    git \
-    libpcre++-dev \
-    zlib1g-dev \ 
-    libzmq3-dev
+ARG ARG_NGINX_VERSION
+ENV NGINX_VERSION=$ARG_NGINX_VERSION
 
-RUN curl http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz -o /tmp/nginx-${NGINX_VERSION}.tar.gz && \
-    cd /tmp && \
-    tar xvzf nginx-${NGINX_VERSION}.tar.gz
+# RUN apk update
+# RUN apk add --upgrade apk-tools
+# RUN apk upgrade --available
+RUN apk add wget git tar
 
-# Клонируем исходный код Nginx и ваш модуль балансировки
-WORKDIR /usr/share/ngx_http_rl_balancer_module
-COPY ngx_http_rl_balancer_module.c ngx_http_rl_balancer_module.c
-COPY config config
+# исходный код nginx
+RUN wget https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
+RUN tar -zxvf nginx-${NGINX_VERSION}.tar.gz
 
-WORKDIR /
-RUN cd /tmp/nginx-${NGINX_VERSION} && \
-    ./configure --with-compat --add-module="/usr/share/ngx_http_rl_balancer_module" --with-cc-opt="-I/usr/include/" --with-ld-opt="-lzmq" && \
-    make modules
+# исходный код модуля
+COPY config /usr/share/ngx_http_upstream_rl_balancer_module/config
+COPY ngx_http_upstream_rl_balancer_module.c /usr/share/ngx_http_upstream_rl_balancer_module/ngx_http_upstream_rl_balancer_module.c
 
-FROM nginx:1.27.0
+# инструменты сборки
+RUN apk add gcc g++ make
 
-COPY --from=builder /tmp/nginx-${NGINX_VERSION}/objs/* /etc/nginx/modules/
+# зависимости nginx
+RUN apk add zlib-dev pcre-dev openssl-dev gd-dev
+RUN apk add libzmq zeromq zeromq-dev
 
-COPY --from=builder /usr/local/lib/* /lib/x86_64-linux-gnu/
+# сборка модуля, новые модули добавлять через --add-dynamic-module
+# модули собираются в каталог /nginx-${NGINX_VERSION}/objs
+RUN cd nginx-${NGINX_VERSION} \
+    && ./configure --with-compat --add-dynamic-module=/usr/share/ngx_http_upstream_rl_balancer_module/ --with-ld-opt="-lzmq" \
+    && make modules
 
+FROM nginx:1.27.0-alpine-slim
 
+ARG ARG_NGINX_VERSION=1.27.0 
+ENV NGINX_VERSION=$ARG_NGINX_VERSION
+RUN apk add libzmq zeromq zeromq-dev
+# копирование собранного модуля из сборочного образа
+COPY --from=build-stage /nginx-${NGINX_VERSION}/objs/ngx_http_upstream_rl_balancer_module.so /etc/nginx/modules
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # Используем базовый образ Nginx
-# FROM nginx:alpine
-
-# # Устанавливаем зависимости для сборки Nginx
-# RUN apk add --no-cache \
-#     build-base \
-#     libzmq \
-#     zeromq-dev \
-#     pcre-dev \
-#     zlib-dev \
-#     openssl-dev \
-#     git
-
-# # Клонируем исходный код Nginx и ваш модуль балансировки
-# WORKDIR /usr/share/ngx_http_rl_balancer_module
-# COPY ngx_http_rl_balancer_module.c ngx_http_rl_balancer_module.c
-# COPY config config
-
-# WORKDIR /usr/src/
-# RUN wget http://nginx.org/download/nginx-1.18.0.tar.gz
-# RUN tar -xvf nginx-1.18.0.tar.gz
-
-# # Собираем Nginx с вашим модулем балансировки
-# WORKDIR /usr/src/nginx-1.18.0
-# RUN ./configure --add-module="/usr/share/ngx_http_rl_balancer_module" --with-cc-opt="-I/usr/include/" --with-ld-opt="-lzmq"
-# RUN make && make install
-
-# # Копируем конфигурационные файлы Nginx
-# RUN mv /usr/src/nginx-1.18.0/objs/nginx /usr/sbin/nginx 
-
-# # Открываем порты
-# EXPOSE 80
-# EXPOSE 8080
-
-# # Запускаем Nginx
-# CMD ["nginx", "-g", "daemon off;"]
+# копирование файлов конфигурации, модифицированных для работы нового модуля
+RUN rm /etc/nginx/nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+RUN rm -rf /etc/nginx/conf.d
+RUN mkdir /etc/nginx/conf.d
+COPY default.conf /etc/nginx/conf.d/default.conf
