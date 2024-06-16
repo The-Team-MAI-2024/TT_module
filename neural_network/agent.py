@@ -85,7 +85,6 @@ if __name__ == "__main__":
                 agent.replay(32)
                 agent.update_target_model()
             logging.info(f"State: {state}, Action: {action}, Reward: {reward}, Next State: {next_state}, Done: {done}")
-
     except Exception as e:
         logging.error(f"An error occurred: {e}")
     finally:

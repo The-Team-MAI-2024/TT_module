@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Example Author
+ * Copyright (C) 2024 The Team
  */
 
 #include <ngx_config.h>
@@ -7,15 +7,15 @@
 #include <ngx_http.h>
 #include <zmq.h>  // ZeroMQ для IPC
 
-static ngx_int_t ngx_http_rl_balancer_init(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us);
-static ngx_int_t ngx_http_rl_balancer_init_peer(ngx_http_request_t *r, ngx_http_upstream_srv_conf_t *us);
-static ngx_int_t ngx_http_rl_balancer_get_peer(ngx_peer_connection_t *pc, void *data);
-static char *ngx_http_rl_balancer(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+static ngx_int_t ngx_http_upstream_rl_balancer_init(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us);
+static ngx_int_t ngx_http_upstream_rl_balancer_init_peer(ngx_http_request_t *r, ngx_http_upstream_srv_conf_t *us);
+static ngx_int_t ngx_http_upstream_rl_balancer_get_peer(ngx_peer_connection_t *pc, void *data);
+static char *ngx_http_upstream_rl_balancer(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 
-static ngx_command_t ngx_http_rl_balancer_commands[] = {
+static ngx_command_t ngx_http_upstream_rl_balancer_commands[] = {
     { ngx_string("rl_balancer"),
       NGX_HTTP_UPS_CONF|NGX_CONF_NOARGS,
-      ngx_http_rl_balancer,
+      ngx_http_upstream_rl_balancer,
       0,
       0,
       NULL },
@@ -23,7 +23,7 @@ static ngx_command_t ngx_http_rl_balancer_commands[] = {
       ngx_null_command
 };
 
-static ngx_http_module_t ngx_http_rl_balancer_module_ctx = {
+static ngx_http_module_t ngx_http_upstream_rl_balancer_module_ctx = {
     NULL,                                  /* preconfiguration */
     NULL,                                  /* postconfiguration */
 
@@ -37,10 +37,10 @@ static ngx_http_module_t ngx_http_rl_balancer_module_ctx = {
     NULL                                   /* merge location configuration */
 };
 
-ngx_module_t ngx_http_rl_balancer_module = {
+ngx_module_t ngx_http_upstream_rl_balancer_module = {
     NGX_MODULE_V1,
-    &ngx_http_rl_balancer_module_ctx,      /* module context */
-    ngx_http_rl_balancer_commands,         /* module directives */
+    &ngx_http_upstream_rl_balancer_module_ctx,      /* module context */
+    ngx_http_upstream_rl_balancer_commands,         /* module directives */
     NGX_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
@@ -54,10 +54,10 @@ ngx_module_t ngx_http_rl_balancer_module = {
 
 typedef struct {
     ngx_http_upstream_rr_peer_data_t rrp;
-} ngx_http_rl_balancer_peer_data_t;
+} ngx_http_upstream_rl_balancer_peer_data_t;
 
 static ngx_int_t
-ngx_http_rl_balancer_init(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
+ngx_http_upstream_rl_balancer_init(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, cf->log, 0, "init rl balancer");
 
@@ -65,19 +65,19 @@ ngx_http_rl_balancer_init(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
         return NGX_ERROR;
     }
 
-    us->peer.init = ngx_http_rl_balancer_init_peer;
+    us->peer.init = ngx_http_upstream_rl_balancer_init_peer;
 
     return NGX_OK;
 }
 
 static ngx_int_t
-ngx_http_rl_balancer_init_peer(ngx_http_request_t *r, ngx_http_upstream_srv_conf_t *us)
+ngx_http_upstream_rl_balancer_init_peer(ngx_http_request_t *r, ngx_http_upstream_srv_conf_t *us)
 {
-    ngx_http_rl_balancer_peer_data_t *rlp;
+    ngx_http_upstream_rl_balancer_peer_data_t *rlp;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "init rl balancer peer");
 
-    rlp = ngx_palloc(r->pool, sizeof(ngx_http_rl_balancer_peer_data_t));
+    rlp = ngx_palloc(r->pool, sizeof(ngx_http_upstream_rl_balancer_peer_data_t));
     if (rlp == NULL) {
         return NGX_ERROR;
     }
@@ -88,15 +88,15 @@ ngx_http_rl_balancer_init_peer(ngx_http_request_t *r, ngx_http_upstream_srv_conf
         return NGX_ERROR;
     }
 
-    r->upstream->peer.get = ngx_http_rl_balancer_get_peer;
+    r->upstream->peer.get = ngx_http_upstream_rl_balancer_get_peer;
 
     return NGX_OK;
 }
 
 static ngx_int_t
-ngx_http_rl_balancer_get_peer(ngx_peer_connection_t *pc, void *data)
+ngx_http_upstream_rl_balancer_get_peer(ngx_peer_connection_t *pc, void *data)
 {
-    ngx_http_rl_balancer_peer_data_t *rlp = data;
+    ngx_http_upstream_rl_balancer_peer_data_t *rlp = data;
     ngx_http_upstream_rr_peer_t *peer;
     ngx_http_upstream_rr_peers_t *peers = rlp->rrp.peers;
 
@@ -156,7 +156,7 @@ ngx_http_rl_balancer_get_peer(ngx_peer_connection_t *pc, void *data)
 }
 
 static char *
-ngx_http_rl_balancer(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
+ngx_http_upstream_rl_balancer(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
     ngx_http_upstream_srv_conf_t *uscf;
 
@@ -166,7 +166,7 @@ ngx_http_rl_balancer(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         ngx_conf_log_error(NGX_LOG_WARN, cf, 0, "load balancing method redefined");
     }
 
-    uscf->peer.init_upstream = ngx_http_rl_balancer_init;
+    uscf->peer.init_upstream = ngx_http_upstream_rl_balancer_init;
 
     uscf->flags = NGX_HTTP_UPSTREAM_CREATE
                   |NGX_HTTP_UPSTREAM_WEIGHT
@@ -178,5 +178,4 @@ ngx_http_rl_balancer(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     return NGX_CONF_OK;
 }
-
 
