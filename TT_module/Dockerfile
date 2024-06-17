@@ -18,8 +18,8 @@ RUN wget https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
 RUN tar -zxvf nginx-${NGINX_VERSION}.tar.gz
 
 # исходный код модуля
-COPY config /usr/share/ngx_http_upstream_rl_balancer_module/config
-COPY ngx_http_upstream_rl_balancer_module.c /usr/share/ngx_http_upstream_rl_balancer_module/ngx_http_upstream_rl_balancer_module.c
+COPY ngx_http_upstream_rl_balancer_module/config /usr/share/ngx_http_upstream_rl_balancer_module/config
+COPY ngx_http_upstream_rl_balancer_module/ngx_http_upstream_rl_balancer_module.c /usr/share/ngx_http_upstream_rl_balancer_module/ngx_http_upstream_rl_balancer_module.c
 
 # инструменты сборки
 RUN apk add gcc g++ make
