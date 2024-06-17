@@ -30,7 +30,7 @@ services:
 
   # agent:
   #   build:
-  #     context: ../../neural_network
+  #     context: ../../TT_neuro
   #     dockerfile: Dockerfile
   #   environment:
   #     - PORT=5555
@@ -39,7 +39,7 @@ services:
 
   nginx:
     build:
-      context: ../../ngx_TT_module
+      context: ../../TT_module
       dockerfile: Dockerfile
     # image: nginx:alpine
     volumes:
